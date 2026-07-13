@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package home;
+
+service GetCourseInfo {
+    rpc CourseInfo (CourseRequest) returns (CourseResponse);
+}
+
+// Client ye bhejega
+message CourseRequest {
+    string id = 1; 
+}
+
+// Server ye wapas dega
+message CourseResponse {
+    string _id = 1;
+    string imgUrl = 2;
+    string price = 3;
+    string title = 4;
+    string instructor = 5;
+    string content_duration = 6;
+}
