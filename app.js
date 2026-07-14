@@ -39,11 +39,11 @@ const razorpayInstance = new Razorpay({
     }
 })();   
 
-// let filepath = path.join(__dirname,'user.proto');
-// let loadedfile = protoLoader.loadSync('./user.proto');
-// let myproto = grpc.loadPackageDefinition(loadedfile).home;
+let filepath = path.join(__dirname,'user.proto');
+let loadedfile = protoLoader.loadSync('./user.proto');
+let myproto = grpc.loadPackageDefinition(loadedfile).home;
 
-// let client = new myproto.GetCourseInfo('127.0.0.1:50051',grpc.credentials.createInsecure())
+let client = new myproto.GetCourseInfo('127.0.0.1:50051',grpc.credentials.createInsecure())
 
 app.post('/user/payments/create-order',async (req,res)=>{
     try { 
@@ -213,26 +213,26 @@ app.get('/user/cart',async(req,res)=>{
     }
 });
  
-// app.get('/user/cart/:_id',async(req,res)=>{
-//     try {
-//         let user = req.user;
-//         // if(!user) return res.status(401).json({success:false , msg:'unauthorized' , data:null , error:null});
-//         console.log(req.params._id);
+app.get('/user/cart/:_id',async(req,res)=>{
+    try {
+        let user = req.user;
+        // if(!user) return res.status(401).json({success:false , msg:'unauthorized' , data:null , error:null});
+        console.log(req.params._id);
 
 
-//         client.CourseInfo({id:req.params._id},(error,data)=>{
-//             console.log("object")
-//             if(!error){
-//                 console.log("data")
-//                 return res.json({success:true , msg:'data found' , data , error:null});
-//             }else return res.json({success:false , msg:'course not found' , data:null , error});
-//             console.log("object2")
-//         });
-//     } catch (error) {
-//         console.log(error);
-//         res.json({success:false , msg:'server error' , data:null , error});
-//     }
-// });
+        client.CourseInfo({id:req.params._id},(error,data)=>{
+            console.log("object")
+            if(!error){
+                console.log("data")
+                return res.json({success:true , msg:'data found' , data , error:null});
+            }else return res.json({success:false , msg:'course not found' , data:null , error});
+            console.log("object2")
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({success:false , msg:'server error' , data:null , error});
+    }
+});
 
 app.post('/user/cart',async(req,res)=>{
     try {
