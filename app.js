@@ -44,7 +44,7 @@ let loadedfile = protoLoader.loadSync('./user.proto');
 let myproto = grpc.loadPackageDefinition(loadedfile).home;
 
 let client = new myproto.GetCourseInfo('127.0.0.1:50051',grpc.credentials.createInsecure())
-
+ 
 app.post('/user/payments/create-order',async (req,res)=>{
     try { 
         let course = req.body.course;
@@ -54,6 +54,15 @@ app.post('/user/payments/create-order',async (req,res)=>{
         if(course.length <= 0) 
             return res.json({success:false , data:null , error:null , msg:'add courses to cart'});
 
+        let newc=course.map(obj => obj._id)
+  
+        console.log(newc)
+
+        client.PriceInfo({ids:newc},(error,data)=>{
+            if(error) console.log(error);
+            else console.log(data.data[0])
+        })
+ 
         //////////////////////////////////////////////// gRPC call to uer service needed for fetching current prices for course ///////////////////////////////////
 
         let {amount,ids} = course.reduce(
@@ -102,13 +111,13 @@ app.post('/user/payments/verify',async(req,res)=>{
         .digest('hex');
         
         if(sign !== razorpay_signature)
-            return res.redirect('http://localhost:3000/payment/failed');
+            return res.json({success:false , data:null , error:null , msg:'something went wrong'});
 
         //////////////////////////////////////////////// gRPC call to uer service needed to check idempotency ///////////////////////////////////
 
         await userModel.findByIdAndUpdate(notes.userId,{$addToSet:{learnings:notes.course}});
         
-        res.json({success:true , data:null , error:null , msg:'server error'});
+        res.json({success:true , data:null , error:null , msg:'ok'});
     } catch (error) {
         console.log(error);
         res.json({success:false , data:null , error:null , msg:'server error'});
@@ -179,10 +188,7 @@ app.get('/user/learnings',async(req,res)=>{
         let dbUser = await userModel.findOne({_id:user._id},{_id:1}).populate('learnings','_id url title instructor content_duration sections').lean();
         if(!dbUser) return res.json({success:false , msg:'user not found' , data:null , error:null});
 
-        console.log(dbUser)
         let learnings = dbUser.learnings.map(({sections,...rest}) => ({sections:sections.length,...rest}));
-
-        console.log(learnings)
  
         let data = learnings || [];
  
@@ -215,18 +221,16 @@ app.get('/user/cart',async(req,res)=>{
  
 app.get('/user/cart/:_id',async(req,res)=>{
     try {
-        let user = req.user;
+        // let user = req.user;
         // if(!user) return res.status(401).json({success:false , msg:'unauthorized' , data:null , error:null});
         console.log(req.params._id);
 
 
         client.CourseInfo({id:req.params._id},(error,data)=>{
-            console.log("object")
             if(!error){
                 console.log("data")
                 return res.json({success:true , msg:'data found' , data , error:null});
             }else return res.json({success:false , msg:'course not found' , data:null , error});
-            console.log("object2")
         });
     } catch (error) {
         console.log(error);
@@ -240,7 +244,7 @@ app.post('/user/cart',async(req,res)=>{
         let user = req.user;
 
         if(!user || !courseId) 
-            return res.status(401).json({success:false , msg:'login/register first' , data:null , error:null});
+            return res.status(400).json({success:false , msg:'login/register first' , data:null , error:null});
 
         courseId = new mongoose.Types.ObjectId(courseId);
 
@@ -270,8 +274,6 @@ app.delete('/user/cart/:courseId',async(req,res)=>{
         res.json({success:false , msg:'server error' , data:null, error});
     }
 });
-
-
 
 app.listen(4043, () => console.log(`user_service on 4043`));
 

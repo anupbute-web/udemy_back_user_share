@@ -4,6 +4,21 @@ package home;
 
 service GetCourseInfo {
     rpc CourseInfo (CourseRequest) returns (CourseResponse);
+    rpc PriceInfo (PriceRequest) returns (PriceResponse);
+}
+
+message PriceRequest{
+    repeated string ids = 1;
+}
+
+message PriceResponseObj{
+    string _id = 1;
+    repeated string courseids = 2;
+    double total_sum = 3;
+}
+
+message PriceResponse{
+    repeated PriceResponseObj data = 1;
 }
 
 // Client ye bhejega
@@ -14,7 +29,7 @@ message CourseRequest {
 // Server ye wapas dega
 message CourseResponse {
     string _id = 1;
-    string imgUrl = 2;
+    string image_url = 2;
     string price = 3;
     string title = 4;
     string instructor = 5;
