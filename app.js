@@ -14,6 +14,8 @@ import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:dns';
+import { rejects } from 'node:assert';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -44,7 +46,7 @@ let loadedfile = protoLoader.loadSync('./user.proto');
 let myproto = grpc.loadPackageDefinition(loadedfile).home;
 
 let client = new myproto.GetCourseInfo('127.0.0.1:50051',grpc.credentials.createInsecure())
- 
+  
 app.post('/user/payments/create-order',async (req,res)=>{
     try { 
         let course = req.body.course;
@@ -55,40 +57,38 @@ app.post('/user/payments/create-order',async (req,res)=>{
             return res.json({success:false , data:null , error:null , msg:'add courses to cart'});
 
         let newc=course.map(obj => obj._id)
-  
-        console.log(newc)
 
-        client.PriceInfo({ids:newc},(error,data)=>{
-            if(error) console.log(error);
-            else console.log(data.data[0])
+        let data = await new Promise((resolve,reject)=>{
+            client.PriceInfo({ids:newc},(error,data)=>{
+                if(error) throw new Error(error)
+                else resolve(data)
+            })
         })
- 
-        //////////////////////////////////////////////// gRPC call to uer service needed for fetching current prices for course ///////////////////////////////////
 
-        let {amount,ids} = course.reduce(
-            (acc,item) => {
-                acc.amount += Number(item.price)*100;
+        let {courseids:all_course , amount:total_amount} = data.data[0];
+
+        console.log(all_course,total_amount)
+
+        let {price,ids} = course.reduce(
+            (acc,item) => { 
+                acc.price += Number(item.price)*100;
                 acc.ids.push(item._id);
                 return acc
             },
-            {amount:0 , ids:[]}
+            {price:0 , ids:[]}
         );
 
-        let price = (await courseModel.find(
-            {_id:{$in:ids}},
-            {price:1}
-        )).reduce((acc,item) => acc + Number(item.price)*100,0);
-
-        if(price !== amount) 
-            return res.json({success:false , data:null , error:null , msg:'something went wrong'});
+        if((price !== total_amount) || (all_course.length !== ids.length)) 
+            return res.json({success:false , data:null , error:null , msg:'somthing went wrong'});
 
         let options = {
-            amount,
+            amount:total_amount,
             currency:'INR',
             notes:{
                 userId:user._id,
-                course:ids
-            }
+                course:all_course
+            },
+            receipt:`${Date.now()}`
         }
 
         let order = await razorpayInstance.orders.create(options);

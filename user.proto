@@ -12,9 +12,8 @@ message PriceRequest{
 }
 
 message PriceResponseObj{
-    string _id = 1;
-    repeated string courseids = 2;
-    double total_sum = 3;
+    repeated string courseids = 1;
+    int32 amount = 2;
 }
 
 message PriceResponse{
